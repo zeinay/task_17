@@ -28,6 +28,12 @@ class RestaurantAPITest(TestCase):
             )
         self.user2.set_password(self.user2.password)
         self.user2.save()
+        self.user3 = User.objects.create(
+            username="bob3",
+            password='adminadmin',
+            )
+        self.user3.set_password(self.user3.password)
+        self.user3.save()
 
         self.restaurant_1 = Restaurant.objects.create(
             owner=self.user,
@@ -95,6 +101,8 @@ class RestaurantAPITest(TestCase):
     def test_create_view(self):
         create_url = reverse("api-create")
         request = self.factory.post(create_url, data=self.restaurant_data)
+        response = RestaurantCreateView.as_view()(request)
+        self.assertEqual(response.status_code, 403)
 
         force_authenticate(request, user=self.user)
         response = RestaurantCreateView.as_view()(request)
@@ -102,13 +110,33 @@ class RestaurantAPITest(TestCase):
         self.assertEqual(Restaurant.objects.count(), 3)
 
     def test_restaurant_update_view(self):
-        update_url = reverse("api-update", kwargs = {"restaurant_id": self.restaurant_1.id})
+        update_url = reverse("api-update", kwargs = {"restaurant_id": self.restaurant_2.id})
         request = self.factory.put(update_url, data=self.restaurant_data)
-        response = RestaurantUpdateView.as_view()(request, restaurant_id=self.restaurant_1.id)
+        response = RestaurantUpdateView.as_view()(request, restaurant_id=self.restaurant_2.id)
+        self.assertEqual(response.status_code, 403)
+
+        force_authenticate(request, user=self.user)
+        response = RestaurantUpdateView.as_view()(request, restaurant_id=self.restaurant_2.id)
+        self.assertEqual(response.status_code, 200)
+
+        force_authenticate(request, user=self.user2)
+        response = RestaurantUpdateView.as_view()(request, restaurant_id=self.restaurant_2.id)
+        self.assertEqual(response.status_code, 200)
+
+        force_authenticate(request, user=self.user3)
+        response = RestaurantUpdateView.as_view()(request, restaurant_id=self.restaurant_2.id)
         self.assertEqual(response.status_code, 200)
 
     def test_restaurant_delete_view(self):
-        delete_url = reverse("api-delete", kwargs = {"restaurant_id": self.restaurant_1.id})
+        delete_url = reverse("api-delete", kwargs = {"restaurant_id": self.restaurant_2.id})
         request = self.factory.delete(delete_url)
-        response1 = RestaurantDeleteView.as_view()(request, restaurant_id=self.restaurant_1.id)
-        self.assertEqual(response1.status_code, 204)
+        response1 = RestaurantDeleteView.as_view()(request, restaurant_id=self.restaurant_2.id)
+        self.assertEqual(response1.status_code, 403)
+
+        force_authenticate(request, user=self.user)
+        response = RestaurantDeleteView.as_view()(request, restaurant_id=self.restaurant_2.id)
+        self.assertEqual(response.status_code, 204)
+
+        force_authenticate(request, user=self.user2)
+        response = RestaurantDeleteView.as_view()(request, restaurant_id=self.restaurant_2.id)
+        self.assertEqual(response.status_code, 403)
