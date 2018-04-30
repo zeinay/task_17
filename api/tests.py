@@ -125,7 +125,7 @@ class RestaurantAPITest(TestCase):
 
         force_authenticate(request, user=self.user3)
         response = RestaurantUpdateView.as_view()(request, restaurant_id=self.restaurant_2.id)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 403)
 
     def test_restaurant_delete_view(self):
         delete_url = reverse("api-delete", kwargs = {"restaurant_id": self.restaurant_2.id})
